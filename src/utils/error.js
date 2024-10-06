@@ -9,10 +9,25 @@ require("dotenv").config();
  * @returns response with message and status code
  */
 const errorHandler = (error, req, res, next) => {
-      responseMessage = error || { message: "Internal server error" };
-  if (process.env.NODE_ENV === "production" ? null : error.stack)
-    responseMessage.stack = error.stack;
-  return res.status(500).json(responseMessage);
+  if (error.code === 11000) {
+    res.status(400).json({
+      success: false,
+      message: "Duplicate key error",
+      error: {
+        field: Object.keys(error.keyPattern)[0],
+        value: error.keyValue[Object.keys(error.keyValue)[0]],
+        message: `${Object.keys(error.keyPattern)[0]} must be unique`,
+      },
+
+    });
+  } else {
+    // Handle other errors
+    res.status(500).json({
+      success: false,
+      message: "An unexpected error occurred",
+      error: error.message,
+    });
+  }
 };
 
 module.exports = { errorHandler };

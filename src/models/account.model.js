@@ -1,5 +1,11 @@
+
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
+require("dotenv").config()
+const crypto = require('crypto');
+const { type } = require('os');
+
+
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,9 +24,11 @@ const userSchema = new mongoose.Schema(
     },
     referredBy: { type: String }, // The referral code of the referrer
     referredUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    referralLink:{
+      type:String
+    },
     referralCode:{
         type: String,
-        unique: true
     },
     referralPoint:{
         type: Number,
@@ -33,27 +41,37 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-const generateReferralCode = (userId) => {
-    return `${userId.toString().slice(-6)}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+const generateUniqueId = (userId) => {
+  const cryptoId=crypto.randomBytes(4).toString('hex')
+  return `${cryptoId}`
+}
+const generateReferralLink = (userReferralCode) => {
+  return `${process.env.FRONTEND_REGISTER_URL}?referral=${userReferralCode}`;
 };
 
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function (next){
   const user = this;
   if (!user.isModified('password')) return next();
 
   try {
-    const salt = await bcrypt.genSalt();
+    const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
     next();
   } catch (error) {
     return next(error);
   }
-  if (!user.referralCode) {
-    user.referralCode = generateReferralCode(user._id);
-  }
 });
 
-// Compare the given password with the hashed password in the database
+userSchema.post('save', async function (doc, next) {
+  if (!this.referralCode) {
+    this.referralCode = generateUniqueId(this._id);
+    this.referralLink = generateReferralLink(this.referralCode);
+    await this.save()
+  }
+  next();
+});
+
+
 userSchema.methods.comparePassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };
@@ -61,3 +79,4 @@ userSchema.methods.comparePassword = async function (password) {
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
+
