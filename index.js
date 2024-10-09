@@ -5,6 +5,9 @@ const helmet = require("helmet");
 const connectDB = require("./src/config/db");
 const authRoutes = require("./src/routes/auth.route");
 const courseRoutes = require("./src/routes/course.route");
+const userRoutes = require("./src/routes/user.route");
+const paymentRoutes = require("./src/routes/payment.route");
+
 const port = process.env.PORT || 3000;
 const cors = require("cors");
 const { urlNotFound } = require("./src/utils/urlNotFound");
@@ -23,6 +26,8 @@ app.use(
 // Define authentication routes
 app.use("/api/auth", authRoutes);
 app.use("/api/course", courseRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/payment", paymentRoutes);
 
 app.use("*", urlNotFound);
 app.use(errorHandler);
