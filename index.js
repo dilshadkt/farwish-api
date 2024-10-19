@@ -24,7 +24,8 @@ app.use(cookieParser());
 app.use(
   cors({
     // origin: process.env.FRONTEND_URL, // Replace with your frontend URL
-    origin: "http://localhost:3000", // Replace with your frontend URL
+    // origin: "http://localhost:3000", // Replace with your frontend URL
+    origin: "https://farwish.vercel.app", // Replace with your frontend URL
     credentials: true,
   })
 );
