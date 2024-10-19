@@ -1,5 +1,6 @@
+const User = require("../models/account.model");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
+const WithdrawalRequest = require("../models/withdraw.model");
 const createCheckoutSession = async (req, res) => {
   try {
     const { amount, customerName, customerAddress } = req.body;
@@ -39,6 +40,55 @@ const createCheckoutSession = async (req, res) => {
   }
 };
 
+const withDraw = async (req, res) => {
+  try {
+    const { userId, amount, accountNumber, ifscCode, accountHolderName } =
+      req.body;
+
+    // Validate user and amount
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    if (user.totalEarning < amount || amount < 300) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid withdrawal amount" });
+    }
+
+    // Create withdrawal request
+    const withdrawalRequest = new WithdrawalRequest({
+      user: userId,
+      amount,
+      accountNumber,
+      ifscCode,
+      accountHolderName,
+      status: "pending",
+    });
+
+    await withdrawalRequest.save();
+
+    // Update user's balance
+    user.totalEarning -= amount;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Withdrawal request submitted successfully",
+    });
+  } catch (error) {
+    console.error("Withdrawal error:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred during the withdrawal process",
+    });
+  }
+};
+
 module.exports = {
   createCheckoutSession,
+  withDraw,
 };

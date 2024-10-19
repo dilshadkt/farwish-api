@@ -1,8 +1,22 @@
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const User = require("../models/account.model");
 const nodemailer = require("nodemailer");
+const WithdrawalRequest = require("../models/withdraw.model");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+const Razorpay = require("razorpay");
+
+// Helper function to set secure cookie
+const setTokenCookie = (res, token) => {
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 3600000, // 1 hour
+  });
+};
 // Register a new user
 const register = async (req, res, next) => {
   const { firstName, lastName, email, password, referralCode } =
@@ -27,6 +41,7 @@ const register = async (req, res, next) => {
     const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
       expiresIn: "1 hour",
     });
+    setTokenCookie(res, token);
     return res.status(201).json({ token });
   } catch (error) {
     next(error);
@@ -53,10 +68,53 @@ const login = async (req, res, next) => {
     const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
       expiresIn: "1 hour",
     });
-    return res.json({ token });
+    setTokenCookie(res, token);
+    return res.json({ isSuperAdmin: false });
   } catch (error) {
     console.error("Login error:", error);
     next(error);
+  }
+};
+const logout = (req, res) => {
+  try {
+    // Clear the authentication cookie
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({ message: "An error occurred during logout" });
+  }
+};
+const superAdminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const admin = await User.findOne({ email, role: "superAdmin" });
+
+    if (!admin) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { userId: admin._id, role: "superAdmin" },
+      process.env.SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+    setTokenCookie(res, token);
+    res.json({ isSuperAdmin: true });
+  } catch (error) {
+    console.error("Admin login error:", error);
+    res.status(500).json({ message: "An error occurred during login" });
   }
 };
 
@@ -95,67 +153,68 @@ const createCheckoutSession = async (req, res, next) => {
   }
 };
 
-const handleSuccessfulPayment = async (req, res) => {
-  const { session_id } = req.query;
+// const handleSuccessfulPayment = async (req, res) => {
+//   const { session_id } = req.query;
 
-  try {
-    const session = await stripe.checkout.sessions.retrieve(session_id);
+//   try {
+//     const session = await stripe.checkout.sessions.retrieve(session_id);
 
-    if (session.payment_status === "paid") {
-      const { client_reference_id, metadata } = session;
-      const referalCode = metadata.referralCode;
-      // Use the metadata to get user data
-      const userData = {
-        email: client_reference_id,
-        firstName: metadata.firstName,
-        lastName: metadata.lastName,
-        password: metadata.password,
-      };
+//     if (session.payment_status === "paid") {
+//       const { client_reference_id, metadata } = session;
+//       const referalCode = metadata.referralCode;
+//       // Use the metadata to get user data
+//       const userData = {
+//         email: client_reference_id,
+//         firstName: metadata.firstName,
+//         lastName: metadata.lastName,
+//         password: metadata.password,
+//       };
 
-      // Create the user
-      const user = new User({
-        ...userData,
-      });
+//       // Create the user
+//       const user = new User({
+//         ...userData,
+//       });
 
-      // Handle referral if a referral code was provided
-      if (referalCode.length > 0) {
-        const referrer = await User.findOne({
-          referralCode: referalCode,
-        });
-        if (referrer) {
-          user.referredBy = referrer.referralCode;
-          referrer.referredUsers.push(user._id);
-          referrer.referralPoint += 150;
-          referrer.totalEarning += 150;
-          referrer.earningsByRefferal += 150;
-          referrer.totalCoins += 1;
-          await referrer.save();
-        } else {
-          // If an invalid referral code is provided, we'll still create the user but without the referral
-          console.log("Invalid referral code provided:", userData.referralCode);
-        }
-      }
+//       // Handle referral if a referral code was provided
+//       if (referalCode.length > 0) {
+//         const referrer = await User.findOne({
+//           referralCode: referalCode,
+//         });
+//         if (referrer) {
+//           user.referredBy = referrer.referralCode;
+//           referrer.referredUsers.push(user._id);
+//           referrer.referralPoint += 150;
+//           referrer.totalEarning += 150;
+//           referrer.earningsByRefferal += 150;
+//           referrer.totalCoins += 1;
+//           await referrer.save();
+//         } else {
+//           // If an invalid referral code is provided, we'll still create the user but without the referral
+//           console.log("Invalid referral code provided:", userData.referralCode);
+//         }
+//       }
 
-      // Save the user
-      await user.save();
+//       // Save the user
+//       await user.save();
 
-      // Generate JWT token
-      const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
-        expiresIn: "1 hour",
-      });
-
-      // Redirect to a frontend success page with the token
-      res.redirect(
-        `${process.env.FRONTEND_URL}/registration-complete?token=${token}`
-      );
-    } else {
-      res.status(400).json({ message: "Payment was not successful" });
-    }
-  } catch (error) {
-    console.error("Error handling successful payment:", error);
-    res.status(500).json({ error: "An error occurred during registration" });
-  }
-};
+//       // Generate JWT token
+//       const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
+//         expiresIn: "1 hour",
+//       });
+//       // Set token as HTTP-only cookie
+//       setTokenCookie(res, token);
+//       // Redirect to a frontend success page with the token
+//       res.redirect(
+//         `${process.env.FRONTEND_URL}/registration-complete?token=${token}`
+//       );
+//     } else {
+//       res.status(400).json({ message: "Payment was not successful" });
+//     }
+//   } catch (error) {
+//     console.error("Error handling successful payment:", error);
+//     res.status(500).json({ error: "An error occurred during registration" });
+//   }
+// };
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -244,6 +303,227 @@ const resetPassword = async (req, res) => {
   res.json({ message: "Password reset successfully" });
 };
 
+const getDashboardStat = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments({
+      role: { $ne: "superAdmin" },
+    });
+    const totalWithdrawalRequests = await WithdrawalRequest.countDocuments();
+    const pendingWithdrawalRequests = await WithdrawalRequest.countDocuments({
+      status: "pending",
+    });
+
+    res.json({
+      totalUsers,
+      totalWithdrawalRequests,
+      pendingWithdrawalRequests,
+    });
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching dashboard stats" });
+  }
+};
+
+const getWithdrawal = async (req, res) => {
+  try {
+    const withdrawalRequests = await WithdrawalRequest.find()
+      .populate("user", "email firstName lastName ")
+      .sort({ createdAt: -1 });
+
+    res.json(withdrawalRequests);
+  } catch (error) {
+    console.error("Error fetching withdrawal requests:", error);
+    res.status(500).json({
+      message: "An error occurred while fetching withdrawal requests",
+    });
+  }
+};
+
+// New route: Update withdrawal request status
+const updateWithdrawal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const withdrawalRequest = await WithdrawalRequest.findByIdAndUpdate(
+      id,
+      { status, processedAt: Date.now() },
+      { new: true }
+    );
+
+    if (!withdrawalRequest) {
+      return res.status(404).json({ message: "Withdrawal request not found" });
+    }
+
+    res.json(withdrawalRequest);
+  } catch (error) {
+    console.error("Error updating withdrawal request:", error);
+    res.status(500).json({
+      message: "An error occurred while updating the withdrawal request",
+    });
+  }
+};
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+// const createRazorpayOrder = async (req, res, next) => {
+//   const { email, firstName, lastName, password, referralCode } = req.body;
+//   try {
+//     const options = {
+//       amount: 49900, // amount in paise (₹499.00)
+//       currency: "INR",
+//       receipt: `receipt_${Date.now()}`,
+//       notes: {
+//         email,
+//         firstName,
+//         lastName,
+//         referralCode,
+//       },
+//     };
+
+//     const order = await razorpay.orders.create(options);
+
+//     res.json({
+//       orderId: order.id,
+//       amount: order.amount,
+//       currency: order.currency,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+const createRazorpayOrder = async (req, res, next) => {
+  const { email, firstName, lastName, password, referralCode } = req.body;
+  try {
+    const options = {
+      amount: 49900,
+      currency: "INR",
+      receipt: `receipt_${Date.now()}`,
+      notes: {
+        email,
+        firstName,
+        lastName,
+        referralCode,
+        password,
+      },
+    };
+
+    console.log("Razorpay order options:", options);
+
+    const order = await razorpay.orders.create(options);
+    console.log("Razorpay order created:", order);
+
+    res.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    });
+  } catch (error) {
+    console.error("Error in createRazorpayOrder:", error);
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+};
+
+// 2. Verify Razorpay configuration
+console.log("Razorpay Key ID:", process.env.RAZORPAY_KEY_ID);
+console.log(
+  "Razorpay Key Secret:",
+  process.env.RAZORPAY_KEY_SECRET ? "Set" : "Not Set"
+);
+
+// 4. Check Razorpay initialization
+try {
+  const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+  console.log("Razorpay initialized successfully");
+} catch (error) {
+  console.error("Error initializing Razorpay:", error);
+}
+
+const handleSuccessfulPayment = async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+    req.body;
+  console.log(req.body);
+  try {
+    // Verify the payment signature
+    const shasum = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
+    shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+    const digest = shasum.digest("hex");
+
+    if (digest !== razorpay_signature) {
+      return res.status(400).json({ message: "Transaction not legit!" });
+    }
+
+    // Fetch the order details
+    const order = await razorpay.orders.fetch(razorpay_order_id);
+
+    if (order.status === "paid") {
+      const { email, firstName, lastName, referralCode, password } =
+        order.notes;
+      console.log(order.notes);
+
+      // Create the user
+      const user = new User({
+        email,
+        firstName,
+        lastName,
+        password,
+      });
+
+      // Handle referral if a referral code was provided
+      if (referralCode) {
+        const referrer = await User.findOne({ referralCode });
+        if (referrer) {
+          user.referredBy = referrer.referralCode;
+          referrer.referredUsers.push(user._id);
+          referrer.referralPoint += 150;
+          referrer.totalEarning += 150;
+          referrer.earningsByRefferal += 150;
+          referrer.totalCoins += 1;
+          await referrer.save();
+        } else {
+          console.log("Invalid referral code provided:", referralCode);
+        }
+      }
+
+      // Save the user
+      await user.save();
+
+      // Generate JWT token
+      const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
+        expiresIn: "1 hour",
+      });
+
+      // Set token as HTTP-only cookie
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 3600000, // 1 hour
+      });
+
+      // Send success response
+      res.json({ success: true, message: "Registration successful" });
+    } else {
+      res.status(400).json({ message: "Payment was not successful" });
+    }
+  } catch (error) {
+    console.error("Error handling successful payment:", error);
+    res.status(500).json({ error: "An error occurred during registration" });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -253,4 +533,10 @@ module.exports = {
   verifyOTP,
   forgetPassword,
   resetPassword,
+  superAdminLogin,
+  getDashboardStat,
+  getWithdrawal,
+  updateWithdrawal,
+  logout,
+  createRazorpayOrder,
 };

@@ -7,6 +7,7 @@ const authRoutes = require("./src/routes/auth.route");
 const courseRoutes = require("./src/routes/course.route");
 const userRoutes = require("./src/routes/user.route");
 const paymentRoutes = require("./src/routes/payment.route");
+const cookieParser = require("cookie-parser");
 
 const port = process.env.PORT || 3000;
 const cors = require("cors");
@@ -17,9 +18,14 @@ connectDB();
 
 app.use(helmet());
 app.use(express.json());
+app.use(cookieParser());
+
+// Updated CORS configuration
 app.use(
   cors({
-    origin: "*",
+    // origin: process.env.FRONTEND_URL, // Replace with your frontend URL
+    origin: "http://localhost:3000", // Replace with your frontend URL
+    credentials: true,
   })
 );
 
@@ -33,5 +39,5 @@ app.use("*", urlNotFound);
 app.use(errorHandler);
 
 app.listen(port, () => {
-  console.log(`Server is running onPosrt: ${port}`);
+  console.log(`Server is running on Port: ${port}`);
 });

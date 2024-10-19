@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    role: {
+      type: String,
+      enum: ["user", "superAdmin"],
+      default: "user",
+    },
     referredBy: { type: String }, // The referral code of the referrer
     referredUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     referralLink: {
