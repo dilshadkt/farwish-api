@@ -17,6 +17,7 @@ const {
 } = require("../controllers/auth.controller");
 const { validate } = require("../middlewares/validation.middleware");
 const { registerSchema } = require("../utils/auth.validator");
+const verifyUser = require("../middlewares/veirfy.middleware");
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.post("/send-otp", sendOTP);
 router.post("/verify-otp", verifyOTP);
 router.post("/forgot-password", forgetPassword);
 router.post("/reset-password", resetPassword);
-router.get("/dashboard-stats", getDashboardStat);
+router.get("/dashboard-stats", verifyUser, getDashboardStat);
 router.get("/withdrawal-requests", getWithdrawal);
 router.put("/withdrawal-requests/:id", updateWithdrawal);
 router.post("/create-razorpay-order", createRazorpayOrder);
