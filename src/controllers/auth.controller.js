@@ -11,12 +11,12 @@ const Razorpay = require("razorpay");
 const setTokenCookie = (res, token) => {
   res.cookie("token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // Must be true in production
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    domain:
-      process.env.NODE_ENV === "production"
-        ? process.env.COOKIE_DOMAIN
-        : "localhost",
+    // secure: process.env.NODE_ENV === "production", // Must be true in production
+    // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    // domain:
+    //   process.env.NODE_ENV === "production"
+    //     ? process.env.COOKIE_DOMAIN
+    //     : "localhost",
     path: "/",
     maxAge: 3600000, // 1 hour
   });
@@ -72,7 +72,11 @@ const login = async (req, res, next) => {
     const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
       expiresIn: "1 hour",
     });
-    setTokenCookie(res, token);
+    res.setHeader(
+      "Set-Cookie",
+      `token=${token}; HttpOnly; Secure; Path=/; Max-Age=3600`
+    );
+    // setTokenCookie(res, token);
     return res.json({ isSuperAdmin: false, user });
   } catch (error) {
     console.error("Login error:", error);
