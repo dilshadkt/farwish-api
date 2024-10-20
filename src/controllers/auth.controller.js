@@ -8,25 +8,15 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const Razorpay = require("razorpay");
 
-// // Helper function to set secure cookie
-// const setTokenCookie = (res, token) => {
-//   res.cookie("token", token, {
-//     httpOnly: true,
-//     secure: process.env.NODE_ENV === "production",
-//     sameSite: "strict",
-//     maxAge: 3600000, // 1 hour
-//   });
-// };
-
 const setTokenCookie = (res, token) => {
-  const isProduction = process.env.NODE_ENV === "production";
-  const domain = isProduction ? process.env.PRODUCTION_DOMAIN : "localhost";
-
   res.cookie("token", token, {
     httpOnly: true,
-    // secure: isProduction, // Use secure cookies in production
-    // sameSite: isProduction ? "none" : "lax", // This is key for cross-site cookies
-    // domain: domain, // Set the domain explicitly
+    secure: process.env.NODE_ENV === "production", // Must be true in production
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    domain:
+      process.env.NODE_ENV === "production"
+        ? process.env.COOKIE_DOMAIN
+        : "localhost",
     path: "/",
     maxAge: 3600000, // 1 hour
   });

@@ -18,17 +18,7 @@ connectDB();
 
 app.use(helmet());
 app.use(express.json());
-app.use(cookieParser());
 
-// Updated CORS configuration
-// app.use(
-//   cors({
-//     // origin: process.env.FRONTEND_URL, // Replace with your frontend URL
-//     // origin: "http://localhost:3000", // Replace with your frontend URL
-//     origin: "https://farwish.vercel.app", // Replace with your frontend URL
-//     credentials: true,
-//   })
-// );
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
@@ -48,7 +38,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
+app.use(cookieParser());
+app.set("trust proxy", 1);
 // Enable pre-flight requests for all routes
 app.options("*", cors(corsOptions));
 
