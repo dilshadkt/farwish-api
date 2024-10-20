@@ -73,7 +73,7 @@ const login = async (req, res, next) => {
       expiresIn: "1 hour",
     });
     setTokenCookie(res, token);
-    return res.json({ isSuperAdmin: false });
+    return res.json({ isSuperAdmin: false, user });
   } catch (error) {
     console.error("Login error:", error);
     next(error);
@@ -114,8 +114,9 @@ const superAdminLogin = async (req, res) => {
       process.env.SECRET_KEY,
       { expiresIn: "1h" }
     );
+    admin.role = "superAdmin";
     setTokenCookie(res, token);
-    res.json({ isSuperAdmin: true });
+    res.json({ isSuperAdmin: true, user: admin });
   } catch (error) {
     console.error("Admin login error:", error);
     res.status(500).json({ message: "An error occurred during login" });

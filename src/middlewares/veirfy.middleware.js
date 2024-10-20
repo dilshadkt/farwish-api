@@ -2,7 +2,6 @@ const jwt = require("jsonwebtoken");
 
 module.exports = function (req, res, next) {
   const token = req.cookies.token; // Get token from cookies instead of headers
-
   if (!token) {
     return res
       .status(401)
