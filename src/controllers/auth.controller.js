@@ -51,6 +51,7 @@ const register = async (req, res, next) => {
 
 // Login with an existing user
 const login = async (req, res, next) => {
+  console.log(req.body);
   const { email, password } = req.body;
 
   try {
@@ -70,8 +71,9 @@ const login = async (req, res, next) => {
       expiresIn: "1 hour",
     });
     setTokenCookie(res, token);
-    return res.json({ isSuperAdmin: false, user });
+    return res.json({ isSuperAdmin: false, user, token });
   } catch (error) {
+    console.log(error);
     console.error("Login error:", error);
     next(error);
   }
@@ -113,7 +115,7 @@ const superAdminLogin = async (req, res) => {
     );
     admin.role = "superAdmin";
     setTokenCookie(res, token);
-    res.json({ isSuperAdmin: true, user: admin });
+    res.json({ isSuperAdmin: true, user: admin, token });
   } catch (error) {
     console.error("Admin login error:", error);
     res.status(500).json({ message: "An error occurred during login" });
@@ -525,6 +527,24 @@ const handleSuccessfulPayment = async (req, res) => {
     res.status(500).json({ error: "An error occurred during registration" });
   }
 };
+const checkUserExist = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userData = user.toJSON(); // Convert the user document to a plain object
+    delete userData.password; // Remove the password field manually
+
+    res.status(200).json({ user: userData });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "An error occurred during registration" });
+  }
+};
 
 module.exports = {
   register,
@@ -541,4 +561,6 @@ module.exports = {
   updateWithdrawal,
   logout,
   createRazorpayOrder,
+
+  checkUserExist,
 };

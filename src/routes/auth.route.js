@@ -14,6 +14,7 @@ const {
   updateWithdrawal,
   logout,
   createRazorpayOrder,
+  checkUserExist,
 } = require("../controllers/auth.controller");
 const { validate } = require("../middlewares/validation.middleware");
 const { registerSchema } = require("../utils/auth.validator");
@@ -23,6 +24,7 @@ const router = express.Router();
 
 router.post("/register", validate(registerSchema), register);
 router.post("/login", login);
+router.post("/verify", verifyUser, checkUserExist);
 router.post("/logout", logout);
 router.post("/admin-login", superAdminLogin);
 router.post("/create-checkout-session", createCheckoutSession);

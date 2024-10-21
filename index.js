@@ -32,16 +32,14 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
-
-app.use(cors(corsOptions));
-app.use(cookieParser());
-app.set("trust proxy", 1);
+app.use(cors());
+// app.use(cookieParser());
+// app.set("trust proxy", 1);
 // Enable pre-flight requests for all routes
-app.options("*", cors(corsOptions));
+// app.options("*", cors(corsOptions));
 
 // Define authentication routes
 app.use("/api/auth", authRoutes);
@@ -50,8 +48,8 @@ app.use("/api/user", userRoutes);
 app.use("/api/payment", paymentRoutes);
 
 app.use("*", urlNotFound);
-app.use(errorHandler);
 
+app.use(errorHandler);
 app.listen(port, () => {
   console.log(`Server is running on Port: ${port}`);
 });
