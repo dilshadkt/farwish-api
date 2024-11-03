@@ -17,7 +17,7 @@ exports.getUserData = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find(
-      {},
+      { role: { $ne: "superAdmin" } },
       {
         firstName: 1,
         lastName: 1,
@@ -27,7 +27,9 @@ exports.getAllUsers = async (req, res) => {
         referralCode: 1,
         createdAt: 1,
       }
-    ).sort({ createdAt: -1 });
+    )
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(users);
   } catch (error) {

@@ -73,7 +73,6 @@ const login = async (req, res, next) => {
     setTokenCookie(res, token);
     return res.json({ isSuperAdmin: false, user, token });
   } catch (error) {
-    console.log(error);
     console.error("Login error:", error);
     next(error);
   }
@@ -114,7 +113,7 @@ const superAdminLogin = async (req, res) => {
       { expiresIn: "1h" }
     );
     admin.role = "superAdmin";
-    setTokenCookie(res, token);
+    // setTokenCookie(res, token);
     res.json({ isSuperAdmin: true, user: admin, token });
   } catch (error) {
     console.error("Admin login error:", error);
@@ -309,6 +308,12 @@ const resetPassword = async (req, res) => {
 
 const getDashboardStat = async (req, res) => {
   try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
+
+    if (user.role !== "superAdmin") {
+      return res.status(201).json({ message: "unauthorized" });
+    }
     const totalUsers = await User.countDocuments({
       role: { $ne: "superAdmin" },
     });
