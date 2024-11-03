@@ -7,6 +7,7 @@ const WithdrawalRequest = require("../models/withdraw.model");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const Razorpay = require("razorpay");
+const createEmailTemplate = require("../constant");
 
 const setTokenCookie = (res, token) => {
   res.cookie("token", token, {
@@ -247,10 +248,14 @@ const sendOTP = async (req, res) => {
 
     // Send email
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: {
+        name: "FARWISH",
+        address: process.env.EMAIL_FROM,
+      },
       to: email,
       subject: "Your OTP for Registration",
       text: `Your OTP is ${otp}. It will expire in 10 minutes.`,
+      html: createEmailTemplate(otp),
     });
 
     res.json({ message: "OTP sent successfully" });
