@@ -384,33 +384,6 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// const createRazorpayOrder = async (req, res, next) => {
-//   const { email, firstName, lastName, password, referralCode } = req.body;
-//   try {
-//     const options = {
-//       amount: 49900, // amount in paise (₹499.00)
-//       currency: "INR",
-//       receipt: `receipt_${Date.now()}`,
-//       notes: {
-//         email,
-//         firstName,
-//         lastName,
-//         referralCode,
-//       },
-//     };
-
-//     const order = await razorpay.orders.create(options);
-
-//     res.json({
-//       orderId: order.id,
-//       amount: order.amount,
-//       currency: order.currency,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
-
 const createRazorpayOrder = async (req, res, next) => {
   const { email, firstName, lastName, password, referralCode } = req.body;
   try {
@@ -442,13 +415,6 @@ const createRazorpayOrder = async (req, res, next) => {
     res.status(500).json({ error: error.message, stack: error.stack });
   }
 };
-
-// 2. Verify Razorpay configuration
-console.log("Razorpay Key ID:", process.env.RAZORPAY_KEY_ID);
-console.log(
-  "Razorpay Key Secret:",
-  process.env.RAZORPAY_KEY_SECRET ? "Set" : "Not Set"
-);
 
 // 4. Check Razorpay initialization
 try {

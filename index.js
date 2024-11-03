@@ -7,39 +7,26 @@ const authRoutes = require("./src/routes/auth.route");
 const courseRoutes = require("./src/routes/course.route");
 const userRoutes = require("./src/routes/user.route");
 const paymentRoutes = require("./src/routes/payment.route");
+const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 
 const port = process.env.PORT || 3000;
 const cors = require("cors");
 const { urlNotFound } = require("./src/utils/urlNotFound");
 const { errorHandler } = require("./src/utils/error");
+const corsOptions = require("./src/utils/cors.config");
 
 connectDB();
 
 app.use(helmet());
 app.use(express.json());
-
-// CORS configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      "https://farwish.vercel.app",
-      "http://localhost:3000", // Include this for local development
-    ];
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-app.use(cors());
-// app.use(cookieParser());
-// app.set("trust proxy", 1);
-// Enable pre-flight requests for all routes
-// app.options("*", cors(corsOptions));
+app.use(cookieParser());
+console.log("Current NODE_ENV:", process.env.NODE_ENV);
+// Apply Rate Limiting
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+app.use(limiter);
+// Apply CORS configuration
+app.use(cors(corsOptions));
 
 // Define authentication routes
 app.use("/api/auth", authRoutes);
