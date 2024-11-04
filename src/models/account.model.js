@@ -39,7 +39,7 @@ const userSchema = new mongoose.Schema(
     },
     totalEarning: {
       type: Number,
-      default: 150,
+      default: 0,
     },
     earningsByRefferal: {
       type: Number,
