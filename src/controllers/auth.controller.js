@@ -31,8 +31,10 @@ const register = async (req, res, next) => {
       if (referrer) {
         user.referredBy = referrer.referralCode;
         referrer.referredUsers.push(user._id);
-        referrer.referralPoint = referrer.referralPoint + 150;
-        referrer.totalEarning += 150;
+        // referrer.referralPoint = referrer.referralPoint + 150;
+        referrer.referralPoint = referrer.referralPoint + 1.5;
+        // referrer.totalEarning += 150;
+        referrer.totalEarning += 1.5;
         referrer.totalCoins += 1;
         await referrer.save();
       } else {
@@ -393,7 +395,8 @@ const createRazorpayOrder = async (req, res, next) => {
   const { email, firstName, lastName, password, referralCode } = req.body;
   try {
     const options = {
-      amount: 49900,
+      // amount: 49900,
+      amount: 490,
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: {
