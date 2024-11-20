@@ -357,6 +357,7 @@ const getWithdrawal = async (req, res) => {
     });
   }
 };
+// this is for single windrawal request
 const getSingleWithdrawal = async (req, res) => {
   try {
     const { id } = req.params; // This is the user ID as string
