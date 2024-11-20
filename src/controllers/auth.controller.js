@@ -366,11 +366,11 @@ const getSingleWithdrawal = async (req, res) => {
       .sort({ createdAt: -1 });
     console.log(withdrawalRequests);
     // Filter after populating by comparing string versions of the IDs
-    const filtered = withdrawalRequests.filter(
-      (withdraw) => withdraw.user._id.toString() === id
-    );
+    // const filtered = withdrawalRequests.filter(
+    //   (withdraw) => withdraw.user._id.toString() === id
+    // );
 
-    res.json(filtered);
+    res.json(withdrawalRequests);
   } catch (error) {
     console.error("Error fetching withdrawal requests:", error);
     res.status(500).json({
