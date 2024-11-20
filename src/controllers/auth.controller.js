@@ -360,17 +360,15 @@ const getWithdrawal = async (req, res) => {
 const getSingleWithdrawal = async (req, res) => {
   try {
     const { id } = req.params; // This is the user ID as string
-    console.log(id);
     const withdrawalRequests = await WithdrawalRequest.find()
       .populate("user", "email firstName lastName")
       .sort({ createdAt: -1 });
-    console.log(withdrawalRequests);
     // Filter after populating by comparing string versions of the IDs
-    // const filtered = withdrawalRequests.filter(
-    //   (withdraw) => withdraw.user._id.toString() === id
-    // );
+    const filtered = withdrawalRequests.filter(
+      (withdraw) => withdraw.user._id.toString() === id
+    );
 
-    res.json(withdrawalRequests);
+    res.json(filtered);
   } catch (error) {
     console.error("Error fetching withdrawal requests:", error);
     res.status(500).json({
