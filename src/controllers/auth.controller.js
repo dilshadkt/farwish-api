@@ -364,7 +364,7 @@ const getSingleWithdrawal = async (req, res) => {
     const withdrawalRequests = await WithdrawalRequest.find()
       .populate("user", "email firstName lastName")
       .sort({ createdAt: -1 });
-
+    console.log(withdrawalRequests);
     // Filter after populating by comparing string versions of the IDs
     const filtered = withdrawalRequests.filter(
       (withdraw) => withdraw.user._id.toString() === id
