@@ -471,9 +471,12 @@ const handleSuccessfulPayment = async (req, res) => {
         if (referrer) {
           user.referredBy = referrer.referralCode;
           referrer.referredUsers.push(user._id);
-          referrer.referralPoint += 150;
-          referrer.totalEarning += 150;
-          referrer.earningsByRefferal += 150;
+          // referrer.referralPoint += 150;
+          // referrer.totalEarning += 150;
+          // referrer.earningsByRefferal += 150;
+          referrer.referralPoint += 1.5;
+          referrer.totalEarning += 1.5;
+          referrer.earningsByRefferal += 1.5;
           referrer.totalCoins += 1;
           await referrer.save();
         } else {

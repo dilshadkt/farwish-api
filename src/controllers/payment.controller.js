@@ -53,7 +53,7 @@ const withDraw = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    if (user.totalEarning < amount || amount < 300) {
+    if (user.totalEarning < amount || amount < 3) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid withdrawal amount" });
