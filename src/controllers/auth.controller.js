@@ -5,7 +5,8 @@ const User = require("../models/account.model");
 const nodemailer = require("nodemailer");
 const WithdrawalRequest = require("../models/withdraw.model");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 const Razorpay = require("razorpay");
 const createEmailTemplate = require("../constant");
 
@@ -356,6 +357,28 @@ const getWithdrawal = async (req, res) => {
     });
   }
 };
+const getSingleWithdrawal = async (req, res) => {
+  try {
+    const { id } = req.params; // This is the user ID as string
+
+    const withdrawalRequests = await WithdrawalRequest.find()
+      .populate("user", "email firstName lastName")
+      .sort({ createdAt: -1 });
+
+    // Filter after populating by comparing string versions of the IDs
+    const filtered = withdrawalRequests.filter(
+      (withdraw) => withdraw.user._id.toString() === id
+    );
+
+    res.json(filtered);
+  } catch (error) {
+    console.error("Error fetching withdrawal requests:", error);
+    res.status(500).json({
+      message: "An error occurred while fetching withdrawal requests",
+      error: error.message,
+    });
+  }
+};
 
 // New route: Update withdrawal request status
 const updateWithdrawal = async (req, res) => {
@@ -600,6 +623,6 @@ module.exports = {
   updateWithdrawal,
   logout,
   createRazorpayOrder,
-
+  getSingleWithdrawal,
   checkUserExist,
 };

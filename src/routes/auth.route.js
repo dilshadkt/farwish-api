@@ -15,6 +15,8 @@ const {
   logout,
   createRazorpayOrder,
   checkUserExist,
+
+  getSingleWithdrawal,
 } = require("../controllers/auth.controller");
 const { validate } = require("../middlewares/validation.middleware");
 const { registerSchema } = require("../utils/auth.validator");
@@ -45,6 +47,7 @@ router.post("/reset-password", resetPassword);
 // some dashboad thinks like the total counts and some thing 😒😒
 router.get("/dashboard-stats", verifyUser, getDashboardStat);
 router.get("/withdrawal-requests", verifyUser, getWithdrawal);
+router.get("/withdrawal-requests/:id", verifyUser, getSingleWithdrawal);
 router.put("/withdrawal-requests/:id", verifyUser, updateWithdrawal);
 
 module.exports = router;
