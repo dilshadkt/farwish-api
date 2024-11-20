@@ -47,7 +47,8 @@ router.post("/reset-password", resetPassword);
 // some dashboad thinks like the total counts and some thing 😒😒
 router.get("/dashboard-stats", verifyUser, getDashboardStat);
 router.get("/withdrawal-requests", verifyUser, getWithdrawal);
-router.get("/withdrawal-requests/:id", verifyUser, getSingleWithdrawal);
+// router.get("/withdrawal-requests/:id", verifyUser, getSingleWithdrawal);
+router.get("/withdrawal-requests/:id", getSingleWithdrawal);
 router.put("/withdrawal-requests/:id", verifyUser, updateWithdrawal);
 
 module.exports = router;
