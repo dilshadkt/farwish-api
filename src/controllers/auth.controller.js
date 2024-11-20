@@ -360,7 +360,7 @@ const getWithdrawal = async (req, res) => {
 const getSingleWithdrawal = async (req, res) => {
   try {
     const { id } = req.params; // This is the user ID as string
-
+    console.log(id);
     const withdrawalRequests = await WithdrawalRequest.find()
       .populate("user", "email firstName lastName")
       .sort({ createdAt: -1 });
