@@ -395,8 +395,7 @@ const createRazorpayOrder = async (req, res, next) => {
   const { email, firstName, lastName, password, referralCode } = req.body;
   try {
     const options = {
-      // amount: 49900,
-      amount: 490,
+      amount: 4990, // ₹499 in paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: {
@@ -406,35 +405,82 @@ const createRazorpayOrder = async (req, res, next) => {
         referralCode,
         password,
       },
+      payment_capture: 1,
     };
 
-    console.log("Razorpay order options:", options);
-
     const order = await razorpay.orders.create(options);
-    console.log("Razorpay order created:", order);
 
+    // Send complete configuration to frontend
     res.json({
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
+      key: process.env.RAZORPAY_KEY_ID,
+      name: "FARWISH",
+      description: "Registration Fee",
+      prefill: {
+        name: `${firstName} ${lastName}`,
+        email: email,
+        contact: "+919526558430", // Optional: Add phone number if available
+      },
+      config: {
+        display: {
+          blocks: {
+            banks: {
+              name: "Pay via UPI",
+              instruments: [
+                {
+                  method: "upi",
+                  flows: ["intent", "collect"],
+                },
+              ],
+            },
+          },
+          sequence: ["block.banks"],
+          preferences: {
+            show_default_blocks: true,
+          },
+        },
+      },
     });
   } catch (error) {
     console.error("Error in createRazorpayOrder:", error);
-    res.status(500).json({ error: error.message, stack: error.stack });
+    res.status(500).json({ error: error.message });
   }
 };
 
-// 4. Check Razorpay initialization
-try {
-  const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-  });
-  console.log("Razorpay initialized successfully");
-} catch (error) {
-  console.error("Error initializing Razorpay:", error);
-}
+// const createRazorpayOrder = async (req, res, next) => {
+//   const { email, firstName, lastName, password, referralCode } = req.body;
+//   try {
+//     const options = {
+//       // amount: 49900,
+//       amount: 490,
+//       currency: "INR",
+//       receipt: `receipt_${Date.now()}`,
+//       notes: {
+//         email,
+//         firstName,
+//         lastName,
+//         referralCode,
+//         password,
+//       },
+//     };
 
+//     console.log("Razorpay order options:", options);
+
+//     const order = await razorpay.orders.create(options);
+//     console.log("Razorpay order created:", order);
+
+//     res.json({
+//       orderId: order.id,
+//       amount: order.amount,
+//       currency: order.currency,
+//     });
+//   } catch (error) {
+//     console.error("Error in createRazorpayOrder:", error);
+//     res.status(500).json({ error: error.message, stack: error.stack });
+//   }
+// };
 const handleSuccessfulPayment = async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
     req.body;
@@ -509,6 +555,17 @@ const handleSuccessfulPayment = async (req, res) => {
     res.status(500).json({ error: "An error occurred during registration" });
   }
 };
+// 4. Check Razorpay initialization
+try {
+  const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+  console.log("Razorpay initialized successfully");
+} catch (error) {
+  console.error("Error initializing Razorpay:", error);
+}
+
 const checkUserExist = async (req, res) => {
   try {
     const userId = req.user.userId;
