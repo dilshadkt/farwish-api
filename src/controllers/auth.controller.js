@@ -417,7 +417,7 @@ const createRazorpayOrder = async (req, res, next) => {
   const { email, firstName, lastName, password, referralCode } = req.body;
   try {
     const options = {
-      amount: 4990, // ₹499 in paise
+      amount: 499000, // ₹499 in paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: {
@@ -443,7 +443,7 @@ const createRazorpayOrder = async (req, res, next) => {
       prefill: {
         name: `${firstName} ${lastName}`,
         email: email,
-        contact: "+919526558430", // Optional: Add phone number if available
+        // contact: "+919526558430", // Optional: Add phone number if available
       },
       config: {
         display: {
@@ -539,12 +539,12 @@ const handleSuccessfulPayment = async (req, res) => {
         if (referrer) {
           user.referredBy = referrer.referralCode;
           referrer.referredUsers.push(user._id);
-          // referrer.referralPoint += 150;
-          // referrer.totalEarning += 150;
-          // referrer.earningsByRefferal += 150;
-          referrer.referralPoint += 1.5;
-          referrer.totalEarning += 1.5;
-          referrer.earningsByRefferal += 1.5;
+          referrer.referralPoint += 150;
+          referrer.totalEarning += 150;
+          referrer.earningsByRefferal += 150;
+          // referrer.referralPoint += 1.5;
+          // referrer.totalEarning += 1.5;
+          // referrer.earningsByRefferal += 1.5;
           referrer.totalCoins += 1;
           await referrer.save();
         } else {
