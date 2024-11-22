@@ -417,7 +417,7 @@ const createRazorpayOrder = async (req, res, next) => {
   const { email, firstName, lastName, password, referralCode } = req.body;
   try {
     const options = {
-      amount: 499000, // ₹499 in paise
+      amount: 49900, // ₹499 in paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: {
@@ -506,7 +506,6 @@ const createRazorpayOrder = async (req, res, next) => {
 const handleSuccessfulPayment = async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
     req.body;
-  console.log(req.body);
   try {
     // Verify the payment signature
     const shasum = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
