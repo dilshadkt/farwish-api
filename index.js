@@ -109,7 +109,7 @@ const limiter = rateLimit({
 // Apply different rate limits for different routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5, // Stricter limit for auth routes
+  max: 10, // Stricter limit for auth routes
   message: {
     status: 429,
     message: "Too many authentication attempts, please try again later.",
